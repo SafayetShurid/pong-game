@@ -19,6 +19,8 @@
     --glow-cyan: 0 0 20px rgba(0, 245, 255, 0.5);
     --glow-magenta: 0 0 20px rgba(255, 0, 255, 0.5);
     --glow-purple: 0 0 30px rgba(139, 92, 246, 0.4);
+    --success-green: #22c55e;
+    --error-red: #ef4444;
 }
 
 body {
@@ -103,6 +105,305 @@ body::before {
     margin-top: 5px;
 }
 
+/* Hidden class */
+.hidden {
+    display: none !important;
+}
+
+/* Mode Selection */
+.mode-selection {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 30px;
+    padding: 40px;
+    background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+    border-radius: 20px;
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    box-shadow: var(--glow-purple);
+}
+
+.mode-title,
+.menu-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.5rem;
+    color: var(--text-primary);
+    text-align: center;
+}
+
+.mode-buttons {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.mode-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 30px 40px;
+    background: linear-gradient(180deg, var(--bg-tertiary) 0%, var(--bg-primary) 100%);
+    border: 2px solid rgba(139, 92, 246, 0.3);
+    border-radius: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 160px;
+}
+
+.mode-btn:hover {
+    border-color: var(--accent-cyan);
+    transform: translateY(-5px);
+    box-shadow: var(--glow-cyan);
+}
+
+.mode-icon {
+    font-size: 2.5rem;
+}
+
+.mode-name {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.mode-desc {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+/* Online Menu */
+.online-menu {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 25px;
+    padding: 40px;
+    background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+    border-radius: 20px;
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    box-shadow: var(--glow-purple);
+    min-width: 350px;
+}
+
+.online-options {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    width: 100%;
+}
+
+.online-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 14px 30px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--bg-primary);
+    background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-purple) 100%);
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 20px rgba(0, 245, 255, 0.3);
+    min-width: 200px;
+}
+
+.online-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0, 245, 255, 0.5);
+}
+
+.divider-text {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    position: relative;
+}
+
+.divider-text::before,
+.divider-text::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 80px;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.divider-text::before {
+    right: 100%;
+    margin-right: 15px;
+}
+
+.divider-text::after {
+    left: 100%;
+    margin-left: 15px;
+}
+
+.join-room-form {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    max-width: 300px;
+}
+
+.join-room-form input {
+    flex: 1;
+    padding: 14px 18px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--text-primary);
+    background: var(--bg-tertiary);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.join-room-form input::placeholder {
+    font-size: 0.8rem;
+    letter-spacing: 0.05em;
+    text-transform: none;
+}
+
+.join-room-form input:focus {
+    border-color: var(--accent-cyan);
+    box-shadow: 0 0 0 3px rgba(0, 245, 255, 0.2);
+}
+
+.join-btn {
+    min-width: auto;
+    padding: 14px 24px;
+}
+
+.back-btn {
+    padding: 10px 20px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.back-btn:hover {
+    color: var(--text-primary);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Waiting Room */
+.waiting-room {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 25px;
+    padding: 40px;
+    background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+    border-radius: 20px;
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    box-shadow: var(--glow-purple);
+    min-width: 350px;
+}
+
+.room-code-display {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 20px 30px;
+    background: var(--bg-primary);
+    border-radius: 12px;
+    border: 2px solid rgba(0, 245, 255, 0.3);
+}
+
+.room-label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.room-code {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 2rem;
+    font-weight: 900;
+    letter-spacing: 0.3em;
+    color: var(--accent-cyan);
+    text-shadow: var(--glow-cyan);
+}
+
+.copy-btn {
+    padding: 8px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2rem;
+    opacity: 0.7;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.copy-btn:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.waiting-text {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.room-status {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+}
+
+.player-status {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.status-dot.connected {
+    background: var(--success-green);
+    box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+}
+
 /* Scoreboard */
 .scoreboard {
     display: flex;
@@ -145,6 +446,7 @@ body::before {
     font-weight: 700;
     min-width: 80px;
     text-align: center;
+    transition: transform 0.15s ease;
 }
 
 .score-divider {
@@ -331,6 +633,57 @@ kbd {
     box-shadow: 0 0 0 3px rgba(0, 245, 255, 0.2);
 }
 
+/* Connection Toast */
+.connection-toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 15px 25px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--error-red);
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.3s ease;
+    z-index: 1000;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+.toast-icon {
+    font-size: 1.2rem;
+}
+
+.toast-message {
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+/* Online Controls Info */
+.controls-info.online-mode .control-group:not(.active) {
+    opacity: 0.3;
+}
+
+.you-indicator {
+    color: var(--accent-cyan);
+    font-size: 0.7rem;
+    font-weight: 600;
+    margin-left: 5px;
+}
+
 /* Responsive */
 @media (max-width: 850px) {
     .game-header h1 {
@@ -361,5 +714,20 @@ kbd {
     .game-settings {
         flex-wrap: wrap;
         justify-content: center;
+    }
+
+    .mode-buttons {
+        flex-direction: column;
+    }
+
+    .mode-btn {
+        min-width: 200px;
+    }
+
+    .online-menu,
+    .waiting-room {
+        min-width: auto;
+        width: 100%;
+        padding: 30px 20px;
     }
 }

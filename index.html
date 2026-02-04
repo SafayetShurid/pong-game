@@ -1,15 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="A classic Pong arcade game with modern visuals and smooth gameplay">
+    <meta name="description" content="A classic Pong arcade game with modern visuals, local and online multiplayer">
     <title>Pong - Classic Arcade Game</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;600&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <div class="game-container">
         <header class="game-header">
@@ -17,7 +21,91 @@
             <p class="subtitle">Classic Arcade Edition</p>
         </header>
 
-        <div class="scoreboard">
+        <!-- Mode Selection Screen -->
+        <div class="mode-selection" id="modeSelection">
+            <h2 class="mode-title">Select Game Mode</h2>
+            <div class="mode-buttons">
+                <button class="mode-btn" id="localModeBtn">
+                    <span class="mode-icon">🎮</span>
+                    <span class="mode-name">Local</span>
+                    <span class="mode-desc">2 players, 1 keyboard</span>
+                </button>
+                <button class="mode-btn" id="onlineModeBtn">
+                    <span class="mode-icon">🌐</span>
+                    <span class="mode-name">Online</span>
+                    <span class="mode-desc">Play with friends</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Online Multiplayer Menu -->
+        <div class="online-menu hidden" id="onlineMenu">
+            <h2 class="menu-title">Online Multiplayer</h2>
+            <div class="online-options">
+                <button class="online-btn" id="createRoomBtn">
+                    <span class="btn-icon">+</span>
+                    <span>Create Room</span>
+                </button>
+                <div class="divider-text">or</div>
+                <div class="join-room-form">
+                    <input type="text" id="roomCodeInput" placeholder="Enter Room Code" maxlength="4"
+                        autocomplete="off">
+                    <button class="online-btn join-btn" id="joinRoomBtn">
+                        <span>Join</span>
+                    </button>
+                </div>
+            </div>
+            <button class="back-btn" id="backToModeBtn">← Back</button>
+        </div>
+
+        <!-- Waiting Room -->
+        <div class="waiting-room hidden" id="waitingRoom">
+            <h2 class="menu-title">Room Created</h2>
+            <div class="room-code-display">
+                <span class="room-label">Room Code:</span>
+                <span class="room-code" id="roomCodeDisplay">----</span>
+                <button class="copy-btn" id="copyCodeBtn" title="Copy code">📋</button>
+            </div>
+            <p class="waiting-text" id="waitingText">Waiting for opponent...</p>
+            <div class="room-status" id="roomStatus">
+                <div class="player-status">
+                    <span class="status-dot connected"></span>
+                    <span>Player 1 (You)</span>
+                </div>
+                <div class="player-status" id="player2Status">
+                    <span class="status-dot"></span>
+                    <span>Player 2</span>
+                </div>
+            </div>
+            <button class="play-btn hidden" id="startOnlineBtn">
+                <span class="btn-icon">▶</span>
+                <span>Start Game</span>
+            </button>
+            <button class="back-btn" id="leaveRoomBtn">Leave Room</button>
+        </div>
+
+        <!-- Guest Waiting Room -->
+        <div class="waiting-room hidden" id="guestWaitingRoom">
+            <h2 class="menu-title">Joined Room</h2>
+            <div class="room-code-display">
+                <span class="room-label">Room Code:</span>
+                <span class="room-code" id="guestRoomCodeDisplay">----</span>
+            </div>
+            <p class="waiting-text">Waiting for host to start...</p>
+            <div class="room-status">
+                <div class="player-status">
+                    <span class="status-dot connected"></span>
+                    <span>Player 1 (Host)</span>
+                </div>
+                <div class="player-status">
+                    <span class="status-dot connected"></span>
+                    <span>Player 2 (You)</span>
+                </div>
+            </div>
+            <button class="back-btn" id="guestLeaveRoomBtn">Leave Room</button>
+        </div>
+
+        <div class="scoreboard hidden" id="scoreboard">
             <div class="player-score player1-score">
                 <span class="player-label">Player 1</span>
                 <span class="score" id="score1">0</span>
@@ -29,7 +117,7 @@
             </div>
         </div>
 
-        <div class="canvas-wrapper">
+        <div class="canvas-wrapper hidden" id="canvasWrapper">
             <canvas id="pongCanvas" width="800" height="500"></canvas>
             <div class="game-overlay" id="gameOverlay">
                 <div class="overlay-content">
@@ -43,15 +131,15 @@
             </div>
         </div>
 
-        <div class="controls-info">
-            <div class="control-group">
+        <div class="controls-info hidden" id="controlsInfo">
+            <div class="control-group" id="player1Controls">
                 <span class="control-label">Player 1</span>
                 <div class="keys">
                     <kbd>W</kbd>
                     <kbd>S</kbd>
                 </div>
             </div>
-            <div class="control-group">
+            <div class="control-group" id="player2Controls">
                 <span class="control-label">Player 2</span>
                 <div class="keys">
                     <kbd>↑</kbd>
@@ -66,7 +154,7 @@
             </div>
         </div>
 
-        <div class="game-settings">
+        <div class="game-settings hidden" id="gameSettings">
             <label class="setting">
                 <span>Winning Score:</span>
                 <select id="winningScore">
@@ -85,8 +173,15 @@
                 </select>
             </label>
         </div>
+
+        <!-- Connection Status Toast -->
+        <div class="connection-toast hidden" id="connectionToast">
+            <span class="toast-icon">⚠️</span>
+            <span class="toast-message" id="toastMessage">Connection lost</span>
+        </div>
     </div>
 
     <script src="game.js"></script>
 </body>
+
 </html>
