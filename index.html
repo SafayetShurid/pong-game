@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A classic Pong arcade game with modern visuals and smooth gameplay">
+    <title>Pong - Classic Arcade Game</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <header class="game-header">
+            <h1>PONG</h1>
+            <p class="subtitle">Classic Arcade Edition</p>
+        </header>
+
+        <div class="scoreboard">
+            <div class="player-score player1-score">
+                <span class="player-label">Player 1</span>
+                <span class="score" id="score1">0</span>
+            </div>
+            <div class="score-divider">:</div>
+            <div class="player-score player2-score">
+                <span class="player-label">Player 2</span>
+                <span class="score" id="score2">0</span>
+            </div>
+        </div>
+
+        <div class="canvas-wrapper">
+            <canvas id="pongCanvas" width="800" height="500"></canvas>
+            <div class="game-overlay" id="gameOverlay">
+                <div class="overlay-content">
+                    <h2 id="overlayTitle">Ready to Play?</h2>
+                    <p id="overlayMessage">Press SPACE to start</p>
+                    <button class="play-btn" id="playBtn">
+                        <span class="btn-icon">▶</span>
+                        <span>Start Game</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls-info">
+            <div class="control-group">
+                <span class="control-label">Player 1</span>
+                <div class="keys">
+                    <kbd>W</kbd>
+                    <kbd>S</kbd>
+                </div>
+            </div>
+            <div class="control-group">
+                <span class="control-label">Player 2</span>
+                <div class="keys">
+                    <kbd>↑</kbd>
+                    <kbd>↓</kbd>
+                </div>
+            </div>
+            <div class="control-group">
+                <span class="control-label">Pause</span>
+                <div class="keys">
+                    <kbd>ESC</kbd>
+                </div>
+            </div>
+        </div>
+
+        <div class="game-settings">
+            <label class="setting">
+                <span>Winning Score:</span>
+                <select id="winningScore">
+                    <option value="5">5 Points</option>
+                    <option value="10" selected>10 Points</option>
+                    <option value="15">15 Points</option>
+                    <option value="21">21 Points</option>
+                </select>
+            </label>
+            <label class="setting">
+                <span>Ball Speed:</span>
+                <select id="ballSpeed">
+                    <option value="slow">Slow</option>
+                    <option value="normal" selected>Normal</option>
+                    <option value="fast">Fast</option>
+                </select>
+            </label>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
