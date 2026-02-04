@@ -1,4 +1,89 @@
 // Pong Game - Classic Arcade Edition
+
+// Sound System using Web Audio API
+class SoundSystem {
+    constructor() {
+        this.audioContext = null;
+        this.enabled = true;
+        this.initialized = false;
+    }
+
+    init() {
+        if (this.initialized) return;
+        try {
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            this.initialized = true;
+        } catch (e) {
+            console.warn('Web Audio API not supported');
+            this.enabled = false;
+        }
+    }
+
+    // Create an oscillator-based sound
+    playTone(frequency, duration, type = 'square', volume = 0.3, delay = 0) {
+        if (!this.enabled || !this.audioContext) return;
+
+        const oscillator = this.audioContext.createOscillator();
+        const gainNode = this.audioContext.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(this.audioContext.destination);
+
+        oscillator.type = type;
+        oscillator.frequency.setValueAtTime(frequency, this.audioContext.currentTime + delay);
+
+        // Envelope for retro feel
+        gainNode.gain.setValueAtTime(0, this.audioContext.currentTime + delay);
+        gainNode.gain.linearRampToValueAtTime(volume, this.audioContext.currentTime + delay + 0.01);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + delay + duration);
+
+        oscillator.start(this.audioContext.currentTime + delay);
+        oscillator.stop(this.audioContext.currentTime + delay + duration);
+    }
+
+    // Paddle hit sound - crisp blip
+    paddleHit() {
+        this.playTone(440, 0.08, 'square', 0.2);
+        this.playTone(880, 0.05, 'square', 0.1, 0.02);
+    }
+
+    // Wall hit sound - lower thud
+    wallHit() {
+        this.playTone(220, 0.1, 'triangle', 0.15);
+    }
+
+    // Score sound - celebratory ascending tones
+    score() {
+        this.playTone(523.25, 0.1, 'square', 0.2, 0);     // C5
+        this.playTone(659.25, 0.1, 'square', 0.2, 0.1);   // E5
+        this.playTone(783.99, 0.15, 'square', 0.25, 0.2); // G5
+    }
+
+    // Game start sound - power up
+    gameStart() {
+        this.playTone(261.63, 0.1, 'square', 0.2, 0);     // C4
+        this.playTone(329.63, 0.1, 'square', 0.2, 0.1);   // E4
+        this.playTone(392.00, 0.1, 'square', 0.2, 0.2);   // G4
+        this.playTone(523.25, 0.2, 'square', 0.3, 0.3);   // C5
+    }
+
+    // Victory sound - triumphant fanfare
+    victory() {
+        this.playTone(523.25, 0.15, 'square', 0.25, 0);    // C5
+        this.playTone(523.25, 0.15, 'square', 0.25, 0.15); // C5
+        this.playTone(523.25, 0.15, 'square', 0.25, 0.3);  // C5
+        this.playTone(659.25, 0.3, 'square', 0.3, 0.45);   // E5
+        this.playTone(587.33, 0.15, 'square', 0.25, 0.75); // D5
+        this.playTone(659.25, 0.15, 'square', 0.25, 0.9);  // E5
+        this.playTone(783.99, 0.4, 'square', 0.35, 1.05);  // G5
+    }
+
+    toggle() {
+        this.enabled = !this.enabled;
+        return this.enabled;
+    }
+}
+
 class PongGame {
     constructor() {
         this.canvas = document.getElementById('pongCanvas');
@@ -51,6 +136,9 @@ class PongGame {
         this.score2Element = document.getElementById('score2');
         this.winningScoreSelect = document.getElementById('winningScore');
         this.ballSpeedSelect = document.getElementById('ballSpeed');
+
+        // Sound system
+        this.sound = new SoundSystem();
 
         // Bind events
         this.bindEvents();
@@ -149,6 +237,10 @@ class PongGame {
     }
 
     startGame() {
+        // Initialize audio context on user interaction
+        this.sound.init();
+        this.sound.gameStart();
+
         this.gameRunning = true;
         this.gamePaused = false;
         this.gameOver = false;
@@ -175,6 +267,7 @@ class PongGame {
     endGame(winner) {
         this.gameOver = true;
         this.gameRunning = false;
+        this.sound.victory();
         const winnerName = winner === 1 ? 'Player 1' : 'Player 2';
         const winnerColor = winner === 1 ? '#00f5ff' : '#ff00ff';
         this.showOverlay(`${winnerName} Wins!`, 'Press SPACE to play again');
@@ -240,15 +333,18 @@ class PongGame {
         if (this.ball.y - this.ball.radius <= 0 || this.ball.y + this.ball.radius >= this.canvas.height) {
             this.ball.dy *= -1;
             this.ball.y = Math.max(this.ball.radius, Math.min(this.canvas.height - this.ball.radius, this.ball.y));
+            this.sound.wallHit();
         }
 
         // Ball collision with paddles
         if (this.checkPaddleCollision(this.paddle1)) {
             this.handlePaddleHit(this.paddle1, 1);
+            this.sound.paddleHit();
         }
 
         if (this.checkPaddleCollision(this.paddle2)) {
             this.handlePaddleHit(this.paddle2, -1);
+            this.sound.paddleHit();
         }
 
         // Scoring
@@ -259,6 +355,7 @@ class PongGame {
                 this.endGame(2);
                 return;
             }
+            this.sound.score();
             this.resetBall(-1);
         } else if (this.ball.x > this.canvas.width) {
             this.paddle1.score++;
@@ -267,6 +364,7 @@ class PongGame {
                 this.endGame(1);
                 return;
             }
+            this.sound.score();
             this.resetBall(1);
         }
     }
