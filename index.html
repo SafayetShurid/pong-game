@@ -41,6 +41,27 @@
         <!-- Online Multiplayer Menu -->
         <div class="online-menu hidden" id="onlineMenu">
             <h2 class="menu-title">Online Multiplayer</h2>
+
+            <div class="online-settings">
+                <label class="setting">
+                    <span>Winning Score:</span>
+                    <select id="onlineWinningScore">
+                        <option value="5">5 Points</option>
+                        <option value="10" selected>10 Points</option>
+                        <option value="15">15 Points</option>
+                        <option value="21">21 Points</option>
+                    </select>
+                </label>
+                <label class="setting">
+                    <span>Ball Speed:</span>
+                    <select id="onlineBallSpeed">
+                        <option value="slow">Slow</option>
+                        <option value="normal" selected>Normal</option>
+                        <option value="fast">Fast</option>
+                    </select>
+                </label>
+            </div>
+
             <div class="online-options">
                 <button class="online-btn" id="createRoomBtn">
                     <span class="btn-icon">+</span>

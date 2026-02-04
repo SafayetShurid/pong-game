@@ -1,4 +1,4 @@
-// Pong Game - Classic Arcade Edition
+// Pong Game - Classic Arcade Edition with Multiplayer
 
 // Sound System using Web Audio API
 class SoundSystem {
@@ -19,7 +19,6 @@ class SoundSystem {
         }
     }
 
-    // Create an oscillator-based sound
     playTone(frequency, duration, type = 'square', volume = 0.3, delay = 0) {
         if (!this.enabled || !this.audioContext) return;
 
@@ -32,7 +31,6 @@ class SoundSystem {
         oscillator.type = type;
         oscillator.frequency.setValueAtTime(frequency, this.audioContext.currentTime + delay);
 
-        // Envelope for retro feel
         gainNode.gain.setValueAtTime(0, this.audioContext.currentTime + delay);
         gainNode.gain.linearRampToValueAtTime(volume, this.audioContext.currentTime + delay + 0.01);
         gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + delay + duration);
@@ -41,41 +39,36 @@ class SoundSystem {
         oscillator.stop(this.audioContext.currentTime + delay + duration);
     }
 
-    // Paddle hit sound - crisp blip
     paddleHit() {
         this.playTone(440, 0.08, 'square', 0.2);
         this.playTone(880, 0.05, 'square', 0.1, 0.02);
     }
 
-    // Wall hit sound - lower thud
     wallHit() {
         this.playTone(220, 0.1, 'triangle', 0.15);
     }
 
-    // Score sound - celebratory ascending tones
     score() {
-        this.playTone(523.25, 0.1, 'square', 0.2, 0);     // C5
-        this.playTone(659.25, 0.1, 'square', 0.2, 0.1);   // E5
-        this.playTone(783.99, 0.15, 'square', 0.25, 0.2); // G5
+        this.playTone(523.25, 0.1, 'square', 0.2, 0);
+        this.playTone(659.25, 0.1, 'square', 0.2, 0.1);
+        this.playTone(783.99, 0.15, 'square', 0.25, 0.2);
     }
 
-    // Game start sound - power up
     gameStart() {
-        this.playTone(261.63, 0.1, 'square', 0.2, 0);     // C4
-        this.playTone(329.63, 0.1, 'square', 0.2, 0.1);   // E4
-        this.playTone(392.00, 0.1, 'square', 0.2, 0.2);   // G4
-        this.playTone(523.25, 0.2, 'square', 0.3, 0.3);   // C5
+        this.playTone(261.63, 0.1, 'square', 0.2, 0);
+        this.playTone(329.63, 0.1, 'square', 0.2, 0.1);
+        this.playTone(392.00, 0.1, 'square', 0.2, 0.2);
+        this.playTone(523.25, 0.2, 'square', 0.3, 0.3);
     }
 
-    // Victory sound - triumphant fanfare
     victory() {
-        this.playTone(523.25, 0.15, 'square', 0.25, 0);    // C5
-        this.playTone(523.25, 0.15, 'square', 0.25, 0.15); // C5
-        this.playTone(523.25, 0.15, 'square', 0.25, 0.3);  // C5
-        this.playTone(659.25, 0.3, 'square', 0.3, 0.45);   // E5
-        this.playTone(587.33, 0.15, 'square', 0.25, 0.75); // D5
-        this.playTone(659.25, 0.15, 'square', 0.25, 0.9);  // E5
-        this.playTone(783.99, 0.4, 'square', 0.35, 1.05);  // G5
+        this.playTone(523.25, 0.15, 'square', 0.25, 0);
+        this.playTone(523.25, 0.15, 'square', 0.25, 0.15);
+        this.playTone(523.25, 0.15, 'square', 0.25, 0.3);
+        this.playTone(659.25, 0.3, 'square', 0.3, 0.45);
+        this.playTone(587.33, 0.15, 'square', 0.25, 0.75);
+        this.playTone(659.25, 0.15, 'square', 0.25, 0.9);
+        this.playTone(783.99, 0.4, 'square', 0.35, 1.05);
     }
 
     toggle() {
@@ -84,10 +77,141 @@ class SoundSystem {
     }
 }
 
+// Multiplayer Network Manager
+class NetworkManager {
+    constructor(game) {
+        this.game = game;
+        this.ws = null;
+        this.playerId = null;
+        this.roomCode = null;
+        this.playerNumber = null;
+        this.isHost = false;
+        this.connected = false;
+    }
+
+    connect() {
+        return new Promise((resolve, reject) => {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}`;
+
+            this.ws = new WebSocket(wsUrl);
+
+            this.ws.onopen = () => {
+                console.log('Connected to server');
+                this.connected = true;
+                resolve();
+            };
+
+            this.ws.onclose = () => {
+                console.log('Disconnected from server');
+                this.connected = false;
+                this.game.handleDisconnect();
+            };
+
+            this.ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                reject(error);
+            };
+
+            this.ws.onmessage = (event) => {
+                const message = JSON.parse(event.data);
+                this.handleMessage(message);
+            };
+        });
+    }
+
+    handleMessage(message) {
+        switch (message.type) {
+            case 'connected':
+                this.playerId = message.playerId;
+                break;
+            case 'roomCreated':
+                this.roomCode = message.roomCode;
+                this.playerNumber = message.playerNumber;
+                this.isHost = true;
+                this.game.onRoomCreated(message.roomCode);
+                break;
+            case 'roomJoined':
+                this.roomCode = message.roomCode;
+                this.playerNumber = message.playerNumber;
+                this.isHost = false;
+                this.game.onRoomJoined(message.roomCode);
+                break;
+            case 'playerJoined':
+                this.game.onPlayerJoined();
+                break;
+            case 'playerLeft':
+                this.game.onPlayerLeft();
+                break;
+            case 'gameStart':
+                this.game.onOnlineGameStart(message.state);
+                break;
+            case 'gameState':
+                this.game.onGameState(message.state, message.events);
+                break;
+            case 'gameOver':
+                this.game.onOnlineGameOver(message.winner);
+                break;
+            case 'error':
+                this.game.showToast(message.message);
+                break;
+        }
+    }
+
+    send(message) {
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            this.ws.send(JSON.stringify(message));
+        }
+    }
+
+    createRoom(winningScore, baseSpeed) {
+        this.send({
+            type: 'createRoom',
+            winningScore,
+            baseSpeed
+        });
+    }
+
+    joinRoom(roomCode) {
+        this.send({
+            type: 'joinRoom',
+            roomCode
+        });
+    }
+
+    startGame() {
+        this.send({ type: 'startGame' });
+    }
+
+    sendPaddleMove(direction) {
+        this.send({
+            type: 'paddleMove',
+            direction
+        });
+    }
+
+    leaveRoom() {
+        this.send({ type: 'leaveRoom' });
+        this.roomCode = null;
+        this.playerNumber = null;
+        this.isHost = false;
+    }
+
+    disconnect() {
+        if (this.ws) {
+            this.ws.close();
+        }
+    }
+}
+
+// Main Game Class
 class PongGame {
     constructor() {
         this.canvas = document.getElementById('pongCanvas');
         this.ctx = this.canvas.getContext('2d');
+
+        // Game mode: 'local' or 'online'
+        this.gameMode = null;
 
         // Game state
         this.gameRunning = false;
@@ -127,7 +251,42 @@ class PongGame {
             ArrowDown: false
         };
 
-        // DOM elements
+        // Online key states (for sending to server)
+        this.lastDirection = 'stop';
+
+        // DOM elements - Mode Selection
+        this.modeSelection = document.getElementById('modeSelection');
+        this.localModeBtn = document.getElementById('localModeBtn');
+        this.onlineModeBtn = document.getElementById('onlineModeBtn');
+
+        // DOM elements - Online Menu
+        this.onlineMenu = document.getElementById('onlineMenu');
+        this.createRoomBtn = document.getElementById('createRoomBtn');
+        this.joinRoomBtn = document.getElementById('joinRoomBtn');
+        this.roomCodeInput = document.getElementById('roomCodeInput');
+        this.backToModeBtn = document.getElementById('backToModeBtn');
+        this.onlineWinningScoreSelect = document.getElementById('onlineWinningScore');
+        this.onlineBallSpeedSelect = document.getElementById('onlineBallSpeed');
+
+        // DOM elements - Waiting Room
+        this.waitingRoom = document.getElementById('waitingRoom');
+        this.roomCodeDisplay = document.getElementById('roomCodeDisplay');
+        this.copyCodeBtn = document.getElementById('copyCodeBtn');
+        this.waitingText = document.getElementById('waitingText');
+        this.player2Status = document.getElementById('player2Status');
+        this.startOnlineBtn = document.getElementById('startOnlineBtn');
+        this.leaveRoomBtn = document.getElementById('leaveRoomBtn');
+
+        // DOM elements - Guest Waiting Room
+        this.guestWaitingRoom = document.getElementById('guestWaitingRoom');
+        this.guestRoomCodeDisplay = document.getElementById('guestRoomCodeDisplay');
+        this.guestLeaveRoomBtn = document.getElementById('guestLeaveRoomBtn');
+
+        // DOM elements - Game
+        this.scoreboard = document.getElementById('scoreboard');
+        this.canvasWrapper = document.getElementById('canvasWrapper');
+        this.controlsInfo = document.getElementById('controlsInfo');
+        this.gameSettings = document.getElementById('gameSettings');
         this.overlay = document.getElementById('gameOverlay');
         this.overlayTitle = document.getElementById('overlayTitle');
         this.overlayMessage = document.getElementById('overlayMessage');
@@ -136,19 +295,24 @@ class PongGame {
         this.score2Element = document.getElementById('score2');
         this.winningScoreSelect = document.getElementById('winningScore');
         this.ballSpeedSelect = document.getElementById('ballSpeed');
+        this.player1Controls = document.getElementById('player1Controls');
+        this.player2Controls = document.getElementById('player2Controls');
+
+        // DOM elements - Toast
+        this.connectionToast = document.getElementById('connectionToast');
+        this.toastMessage = document.getElementById('toastMessage');
 
         // Sound system
         this.sound = new SoundSystem();
 
+        // Network manager
+        this.network = new NetworkManager(this);
+
         // Bind events
         this.bindEvents();
-
-        // Initial draw
-        this.draw();
     }
 
     initGameObjects() {
-        // Paddles
         this.paddle1 = {
             x: this.paddleOffset,
             y: this.canvas.height / 2 - this.paddleHeight / 2,
@@ -167,7 +331,6 @@ class PongGame {
             score: 0
         };
 
-        // Ball
         this.resetBall();
     }
 
@@ -187,8 +350,26 @@ class PongGame {
         document.addEventListener('keydown', (e) => this.handleKeyDown(e));
         document.addEventListener('keyup', (e) => this.handleKeyUp(e));
 
-        // Play button
-        this.playBtn.addEventListener('click', () => this.startGame());
+        // Mode selection
+        this.localModeBtn.addEventListener('click', () => this.selectLocalMode());
+        this.onlineModeBtn.addEventListener('click', () => this.selectOnlineMode());
+
+        // Online menu
+        this.createRoomBtn.addEventListener('click', () => this.createRoom());
+        this.joinRoomBtn.addEventListener('click', () => this.joinRoom());
+        this.backToModeBtn.addEventListener('click', () => this.backToModeSelection());
+        this.roomCodeInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') this.joinRoom();
+        });
+
+        // Waiting room
+        this.copyCodeBtn.addEventListener('click', () => this.copyRoomCode());
+        this.startOnlineBtn.addEventListener('click', () => this.network.startGame());
+        this.leaveRoomBtn.addEventListener('click', () => this.leaveRoom());
+        this.guestLeaveRoomBtn.addEventListener('click', () => this.leaveRoom());
+
+        // Play button (local mode)
+        this.playBtn.addEventListener('click', () => this.startLocalGame());
 
         // Settings
         this.winningScoreSelect.addEventListener('change', (e) => {
@@ -205,25 +386,54 @@ class PongGame {
     }
 
     handleKeyDown(e) {
-        if (e.key === ' ' || e.code === 'Space') {
-            e.preventDefault();
-            if (!this.gameRunning || this.gameOver) {
-                this.startGame();
-            } else if (!this.gamePaused) {
-                this.pauseGame();
-            } else {
-                this.resumeGame();
+        // Local mode controls
+        if (this.gameMode === 'local') {
+            if (e.key === ' ' || e.code === 'Space') {
+                e.preventDefault();
+                if (!this.gameRunning || this.gameOver) {
+                    this.startLocalGame();
+                } else if (!this.gamePaused) {
+                    this.pauseGame();
+                } else {
+                    this.resumeGame();
+                }
+            }
+
+            if (e.key === 'Escape' && this.gameRunning && !this.gameOver) {
+                if (this.gamePaused) {
+                    this.resumeGame();
+                } else {
+                    this.pauseGame();
+                }
             }
         }
 
-        if (e.key === 'Escape' && this.gameRunning && !this.gameOver) {
-            if (this.gamePaused) {
-                this.resumeGame();
+        // Online mode controls
+        if (this.gameMode === 'online' && this.gameRunning) {
+            let direction = null;
+
+            if (this.network.playerNumber === 1) {
+                if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') {
+                    direction = 'up';
+                } else if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown') {
+                    direction = 'down';
+                }
             } else {
-                this.pauseGame();
+                if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+                    direction = 'up';
+                } else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
+                    direction = 'down';
+                }
+            }
+
+            if (direction && direction !== this.lastDirection) {
+                this.lastDirection = direction;
+                this.network.sendPaddleMove(direction);
+                e.preventDefault();
             }
         }
 
+        // Local mode key tracking
         if (this.keys.hasOwnProperty(e.key)) {
             e.preventDefault();
             this.keys[e.key] = true;
@@ -234,10 +444,277 @@ class PongGame {
         if (this.keys.hasOwnProperty(e.key)) {
             this.keys[e.key] = false;
         }
+
+        // Online mode: stop paddle
+        if (this.gameMode === 'online' && this.gameRunning) {
+            const isMovementKey = ['w', 'W', 's', 'S', 'ArrowUp', 'ArrowDown'].includes(e.key);
+            if (isMovementKey) {
+                // Check if all movement keys are released
+                const anyPressed = this.keys.w || this.keys.s || this.keys.ArrowUp || this.keys.ArrowDown;
+                if (!anyPressed && this.lastDirection !== 'stop') {
+                    this.lastDirection = 'stop';
+                    this.network.sendPaddleMove('stop');
+                }
+            }
+        }
     }
 
-    startGame() {
-        // Initialize audio context on user interaction
+    // Mode Selection
+    selectLocalMode() {
+        this.gameMode = 'local';
+        this.modeSelection.classList.add('hidden');
+        this.showGameUI();
+        this.showOverlay('Ready to Play?', 'Press SPACE to start');
+        this.draw();
+    }
+
+    async selectOnlineMode() {
+        this.sound.init();
+        this.modeSelection.classList.add('hidden');
+        this.onlineMenu.classList.remove('hidden');
+
+        if (!this.network.connected) {
+            try {
+                await this.network.connect();
+            } catch (error) {
+                this.showToast('Could not connect to server');
+                this.backToModeSelection();
+            }
+        }
+    }
+
+    backToModeSelection() {
+        this.gameMode = null;
+        this.onlineMenu.classList.add('hidden');
+        this.waitingRoom.classList.add('hidden');
+        this.guestWaitingRoom.classList.add('hidden');
+        this.hideGameUI();
+        this.modeSelection.classList.remove('hidden');
+    }
+
+    // Online Mode Methods
+    async createRoom() {
+        const winningScore = parseInt(this.onlineWinningScoreSelect.value);
+        const speeds = { slow: 3, normal: 4, fast: 6 };
+        const baseSpeed = speeds[this.onlineBallSpeedSelect.value];
+
+        this.network.createRoom(winningScore, baseSpeed);
+    }
+
+    joinRoom() {
+        const roomCode = this.roomCodeInput.value.trim().toUpperCase();
+        if (roomCode.length !== 4) {
+            this.showToast('Please enter a 4-character room code');
+            return;
+        }
+        this.network.joinRoom(roomCode);
+    }
+
+    onRoomCreated(roomCode) {
+        this.onlineMenu.classList.add('hidden');
+        this.waitingRoom.classList.remove('hidden');
+        this.roomCodeDisplay.textContent = roomCode;
+        this.startOnlineBtn.classList.add('hidden');
+    }
+
+    onRoomJoined(roomCode) {
+        this.onlineMenu.classList.add('hidden');
+        this.guestWaitingRoom.classList.remove('hidden');
+        this.guestRoomCodeDisplay.textContent = roomCode;
+        this.roomCodeInput.value = '';
+    }
+
+    onPlayerJoined() {
+        this.player2Status.querySelector('.status-dot').classList.add('connected');
+        this.waitingText.textContent = 'Player 2 connected!';
+        this.startOnlineBtn.classList.remove('hidden');
+    }
+
+    onPlayerLeft() {
+        if (this.network.isHost) {
+            this.player2Status.querySelector('.status-dot').classList.remove('connected');
+            this.waitingText.textContent = 'Waiting for opponent...';
+            this.startOnlineBtn.classList.add('hidden');
+        }
+
+        if (this.gameRunning) {
+            this.gameRunning = false;
+            this.showToast('Opponent disconnected');
+            this.returnToWaitingRoom();
+        }
+    }
+
+    returnToWaitingRoom() {
+        this.hideGameUI();
+        if (this.network.isHost) {
+            this.waitingRoom.classList.remove('hidden');
+            this.player2Status.querySelector('.status-dot').classList.remove('connected');
+            this.waitingText.textContent = 'Waiting for opponent...';
+            this.startOnlineBtn.classList.add('hidden');
+        } else {
+            this.backToModeSelection();
+        }
+    }
+
+    leaveRoom() {
+        this.network.leaveRoom();
+        this.backToModeSelection();
+    }
+
+    copyRoomCode() {
+        const code = this.roomCodeDisplay.textContent;
+        navigator.clipboard.writeText(code).then(() => {
+            this.copyCodeBtn.textContent = '✓';
+            setTimeout(() => {
+                this.copyCodeBtn.textContent = '📋';
+            }, 2000);
+        });
+    }
+
+    onOnlineGameStart(state) {
+        this.gameMode = 'online';
+        this.sound.init();
+        this.sound.gameStart();
+
+        this.waitingRoom.classList.add('hidden');
+        this.guestWaitingRoom.classList.add('hidden');
+
+        this.showGameUI();
+        this.hideOverlay();
+
+        // Update controls display for online mode
+        this.updateOnlineControls();
+
+        this.gameRunning = true;
+        this.gameOver = false;
+
+        // Apply initial state
+        this.applyGameState(state);
+
+        // Start render loop
+        this.renderLoop();
+    }
+
+    updateOnlineControls() {
+        this.controlsInfo.classList.add('online-mode');
+
+        if (this.network.playerNumber === 1) {
+            this.player1Controls.classList.add('active');
+            this.player2Controls.classList.remove('active');
+            this.player1Controls.querySelector('.control-label').innerHTML = 'You <span class="you-indicator">(Player 1)</span>';
+        } else {
+            this.player1Controls.classList.remove('active');
+            this.player2Controls.classList.add('active');
+            this.player2Controls.querySelector('.control-label').innerHTML = 'You <span class="you-indicator">(Player 2)</span>';
+        }
+    }
+
+    onGameState(state, events) {
+        this.applyGameState(state);
+
+        // Play sounds based on events
+        if (events) {
+            if (events.paddleHit) this.sound.paddleHit();
+            if (events.wallHit) this.sound.wallHit();
+            if (events.scored) this.sound.score();
+        }
+    }
+
+    applyGameState(state) {
+        this.paddle1.x = state.paddle1.x;
+        this.paddle1.y = state.paddle1.y;
+        this.paddle1.score = state.paddle1.score;
+
+        this.paddle2.x = state.paddle2.x;
+        this.paddle2.y = state.paddle2.y;
+        this.paddle2.score = state.paddle2.score;
+
+        this.ball.x = state.ball.x;
+        this.ball.y = state.ball.y;
+        this.ball.dx = state.ball.dx;
+        this.ball.dy = state.ball.dy;
+
+        // Update ball trail
+        if (!this.ball.trail) this.ball.trail = [];
+        this.ball.trail.push({ x: this.ball.x, y: this.ball.y });
+        if (this.ball.trail.length > 15) {
+            this.ball.trail.shift();
+        }
+
+        this.updateScoreDisplay();
+    }
+
+    onOnlineGameOver(winner) {
+        this.gameOver = true;
+        this.gameRunning = false;
+        this.sound.victory();
+
+        const isWinner = winner === this.network.playerNumber;
+        const title = isWinner ? 'You Win!' : 'You Lose!';
+        const color = isWinner ? '#22c55e' : '#ef4444';
+
+        this.showOverlay(title, 'Returning to lobby...');
+        this.overlayTitle.style.color = color;
+        this.overlayTitle.style.textShadow = `0 0 30px ${color}`;
+        this.playBtn.classList.add('hidden');
+
+        setTimeout(() => {
+            this.returnToWaitingRoom();
+            this.playBtn.classList.remove('hidden');
+        }, 3000);
+    }
+
+    renderLoop() {
+        if (!this.gameRunning && !this.gameOver) return;
+
+        this.draw();
+
+        if (this.gameRunning) {
+            requestAnimationFrame(() => this.renderLoop());
+        }
+    }
+
+    handleDisconnect() {
+        if (this.gameRunning) {
+            this.gameRunning = false;
+            this.showToast('Connection lost');
+        }
+        this.backToModeSelection();
+    }
+
+    showToast(message, duration = 3000) {
+        this.toastMessage.textContent = message;
+        this.connectionToast.classList.remove('hidden');
+
+        setTimeout(() => {
+            this.connectionToast.classList.add('hidden');
+        }, duration);
+    }
+
+    // UI Helpers
+    showGameUI() {
+        this.scoreboard.classList.remove('hidden');
+        this.canvasWrapper.classList.remove('hidden');
+        this.controlsInfo.classList.remove('hidden');
+        if (this.gameMode === 'local') {
+            this.gameSettings.classList.remove('hidden');
+        }
+    }
+
+    hideGameUI() {
+        this.scoreboard.classList.add('hidden');
+        this.canvasWrapper.classList.add('hidden');
+        this.controlsInfo.classList.add('hidden');
+        this.gameSettings.classList.add('hidden');
+        this.controlsInfo.classList.remove('online-mode');
+        this.player1Controls.classList.remove('active');
+        this.player2Controls.classList.remove('active');
+        this.player1Controls.querySelector('.control-label').textContent = 'Player 1';
+        this.player2Controls.querySelector('.control-label').textContent = 'Player 2';
+    }
+
+    // Local Mode Game Methods
+    startLocalGame() {
         this.sound.init();
         this.sound.gameStart();
 
@@ -264,7 +741,7 @@ class PongGame {
         this.gameLoop();
     }
 
-    endGame(winner) {
+    endLocalGame(winner) {
         this.gameOver = true;
         this.gameRunning = false;
         this.sound.victory();
@@ -292,7 +769,6 @@ class PongGame {
         this.score1Element.textContent = this.paddle1.score;
         this.score2Element.textContent = this.paddle2.score;
 
-        // Animate score change
         this.score1Element.style.transform = 'scale(1.2)';
         this.score2Element.style.transform = 'scale(1.2)';
         setTimeout(() => {
@@ -302,7 +778,7 @@ class PongGame {
     }
 
     update() {
-        // Update paddle positions based on keys
+        // Update paddle positions based on keys (local mode only)
         if (this.keys.w) this.paddle1.dy = -this.paddleSpeed;
         else if (this.keys.s) this.paddle1.dy = this.paddleSpeed;
         else this.paddle1.dy = 0;
@@ -352,7 +828,7 @@ class PongGame {
             this.paddle2.score++;
             this.updateScoreDisplay();
             if (this.paddle2.score >= this.winningScore) {
-                this.endGame(2);
+                this.endLocalGame(2);
                 return;
             }
             this.sound.score();
@@ -361,7 +837,7 @@ class PongGame {
             this.paddle1.score++;
             this.updateScoreDisplay();
             if (this.paddle1.score >= this.winningScore) {
-                this.endGame(1);
+                this.endLocalGame(1);
                 return;
             }
             this.sound.score();
@@ -377,24 +853,18 @@ class PongGame {
     }
 
     handlePaddleHit(paddle, direction) {
-        // Calculate hit position relative to paddle center (-1 to 1)
         const hitPos = (this.ball.y - (paddle.y + paddle.height / 2)) / (paddle.height / 2);
-
-        // Adjust angle based on where ball hits paddle
-        const maxAngle = Math.PI / 4; // 45 degrees
+        const maxAngle = Math.PI / 4;
         const angle = hitPos * maxAngle;
 
-        // Increase speed slightly on each hit (up to a max)
         const speedIncrease = 1.05;
         const maxSpeed = this.baseSpeed * 2;
         const currentSpeed = Math.sqrt(this.ball.dx * this.ball.dx + this.ball.dy * this.ball.dy);
         const newSpeed = Math.min(currentSpeed * speedIncrease, maxSpeed);
 
-        // Set new velocity
         this.ball.dx = direction * newSpeed * Math.cos(angle);
         this.ball.dy = newSpeed * Math.sin(angle);
 
-        // Move ball outside paddle to prevent multiple collisions
         if (direction === 1) {
             this.ball.x = paddle.x + paddle.width + this.ball.radius;
         } else {
@@ -463,17 +933,14 @@ class PongGame {
     }
 
     drawPaddle(paddle, color) {
-        // Glow effect
         this.ctx.shadowColor = color;
         this.ctx.shadowBlur = 20;
 
-        // Paddle body
         this.ctx.fillStyle = color;
         this.ctx.beginPath();
         this.ctx.roundRect(paddle.x, paddle.y, paddle.width, paddle.height, 6);
         this.ctx.fill();
 
-        // Inner highlight
         const gradient = this.ctx.createLinearGradient(paddle.x, paddle.y, paddle.x + paddle.width, paddle.y);
         gradient.addColorStop(0, 'rgba(255, 255, 255, 0.3)');
         gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.1)');
@@ -502,11 +969,9 @@ class PongGame {
     }
 
     drawBall() {
-        // Outer glow
         this.ctx.shadowColor = '#ffffff';
         this.ctx.shadowBlur = 25;
 
-        // Ball body
         const gradient = this.ctx.createRadialGradient(
             this.ball.x - 3, this.ball.y - 3, 0,
             this.ball.x, this.ball.y, this.ball.radius
